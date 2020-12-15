@@ -1,0 +1,61 @@
+.createModel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.createModel__body {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.modelView {
+    width: 500px;
+    height: 500px;
+    border-radius: 10px;
+    border: 1px solid black;
+    margin: 0 0 10px 0;
+}
+
+.createModel__inputs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.createModel__input {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 5px 10px;
+    margin: 0 0 10px 0;
+}
+
+.createModel__buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    width: 100%;
+}
+
+.createModel__button {
+    border: 1px solid black;
+    border-radius: 5px;
+    padding: 10px 15px;
+    margin: 0 0 10px 0;
+    cursor: pointer;
+    background-color: transparent;
+    transition: all ease .4s;
+}
+
+.createModel__button:hover{
+    background-color: silver;
+    transition: all ease .4s;
+}
+
+.createModel__error{
+    text-align: center;
+    border: 2px solid crimson;
+    border-radius: 5px;
+    padding: 15px;
+}
