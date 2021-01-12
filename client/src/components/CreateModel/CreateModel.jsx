@@ -6,7 +6,12 @@ import "./CreateModel.css"
 
 const CreateModel = () => {
   const {loading, request, error, clearError} = useHttp()
-  const [modelSize, setModelSize] = useState({width: 1, height: 1, length: 1})
+  const [currentModelSize, setCurrentModelSize] = useState({
+    width: 1,
+    height: 1,
+    length: 1
+  })
+  const [lastModelSize, setLastModelSize] = useState()
   const [modelCoord, setModelCoord] = useState({triangles: null, vertices: null})
   const [three, setThree] = useState({
     scene: {},
@@ -17,23 +22,28 @@ const CreateModel = () => {
   const canvasContainer = createRef()
 
   const changeInputHandler = (e) => {
-    setModelSize({
-      ...modelSize,
+    setCurrentModelSize({
+      ...currentModelSize,
       [e.target.name]: e.target.value
     })
   }
 
+  //Обрабатывает нажатие на кнопку "Очистить"
   const clearHandler = () => {
     clearScene(three.scene, three.renderer)
-    setModelSize({width: 1, height: 1, length: 1})
+    setCurrentModelSize({width: 1, height: 1, length: 1})
   }
 
+  //Обрабатывает нажатие на кнопку "Создать"
   const createHandler = async () => {
+    if (JSON.stringify(currentModelSize) === JSON.stringify(lastModelSize)) return // Не делать запрос если указаны те же размеры
     try {
-      const data = await request('/api/create', 'POST', {...modelSize})
+      const data = await request('/api/create', 'POST', {...currentModelSize})
+      setLastModelSize({...currentModelSize})
       clearError()
       setModelCoord({...data})
-    } catch (e) {}
+    } catch (e) {
+    }
   }
 
   // Создает сцену
@@ -42,7 +52,7 @@ const CreateModel = () => {
     const width = canvasContainer.current.clientWidth
     const height = canvasContainer.current.clientHeight
 
-    //Создание сцены, камеры. рендера
+    //Создание сцены, камеры, рендера
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 100);
@@ -70,7 +80,7 @@ const CreateModel = () => {
 
   // Чистит сцену и пямять
   const clearScene = (obj) => {
-    while(obj.children.length > 0){
+    while (obj.children.length > 0) {
       clearScene(obj.children[0])
       obj.remove(obj.children[0]);
     }
@@ -88,7 +98,7 @@ const CreateModel = () => {
     }
   }
 
-  // Добавляет 3d объект в на сцену
+  // Добавляет 3d объект на сцену
   const createObject = (triangles, vertices, scene) => {
     //Проверка на наличие данных
     if (!triangles || !vertices) return
@@ -150,7 +160,7 @@ const CreateModel = () => {
                    placeholder="width"
                    className="createModel__input"
                    onChange={changeInputHandler}
-                   value={modelSize.width}/>
+                   value={currentModelSize.width}/>
           </label>
 
           <label htmlFor="height">Высота
@@ -160,7 +170,7 @@ const CreateModel = () => {
                    placeholder="height"
                    className="createModel__input"
                    onChange={changeInputHandler}
-                   value={modelSize.height}/>
+                   value={currentModelSize.height}/>
           </label>
 
           <label htmlFor="length">Длина
@@ -170,7 +180,7 @@ const CreateModel = () => {
                    placeholder="length"
                    className="createModel__input"
                    onChange={changeInputHandler}
-                   value={modelSize.length}/>
+                   value={currentModelSize.length}/>
           </label>
         </div>
         <div className="createModel__buttons">
