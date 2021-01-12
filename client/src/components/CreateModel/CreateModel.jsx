@@ -1,13 +1,18 @@
 import React, {createRef, useEffect, useState} from 'react'
-import "./CreateModel.css"
 import * as THREE from "three";
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import useHttp from "../../hooks/http.hook";
+import "./CreateModel.css"
 
 const CreateModel = () => {
   const {loading, request, error, clearError} = useHttp()
   const [modelSize, setModelSize] = useState({width: 1, height: 1, length: 1})
   const [modelCoord, setModelCoord] = useState({triangles: null, vertices: null})
+  const [three, setThree] = useState({
+    scene: {},
+    renderer: {},
+    camera: {}
+  })
 
   const canvasContainer = createRef()
 
@@ -19,8 +24,8 @@ const CreateModel = () => {
   }
 
   const clearHandler = () => {
-    canvasContainer.current.innerHTML = ''
-    setModelSize({width: 1,  height: 1, length: 1})
+    clearScene(three.scene, three.renderer)
+    setModelSize({width: 1, height: 1, length: 1})
   }
 
   const createHandler = async () => {
@@ -28,22 +33,11 @@ const CreateModel = () => {
       const data = await request('/api/create', 'POST', {...modelSize})
       clearError()
       setModelCoord({...data})
-    } catch (e) {
-
-    }
+    } catch (e) {}
   }
 
-  useEffect((canvasContainer) => {
-    createModel(modelCoord.triangles, modelCoord.vertices, canvasContainer)
-  }, [modelCoord])
-
-  const createModel = (triangles, vertices, place) => {
-    //Проверка на наличие данных
-    if (!triangles || !vertices) return
-
-    //Очистка поля перед вставкой
-    canvasContainer.current.innerHTML = ''
-
+  // Создает сцену
+  const createScene = () => {
     //Размеры canvas
     const width = canvasContainer.current.clientWidth
     const height = canvasContainer.current.clientHeight
@@ -59,6 +53,45 @@ const CreateModel = () => {
     renderer.setClearColor(0x000000, 0)
 
     canvasContainer.current.append(renderer.domElement)
+
+    //Добавление контроллера
+    new OrbitControls(camera, renderer.domElement);
+
+    //Start render
+    const animate = () => {
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    };
+
+    animate()
+
+    return {scene, renderer, camera}
+  }
+
+  // Чистит сцену и пямять
+  const clearScene = (obj) => {
+    while(obj.children.length > 0){
+      clearScene(obj.children[0])
+      obj.remove(obj.children[0]);
+    }
+    if (obj.geometry) {
+      obj.geometry.dispose();
+      obj.geometry = null;
+    }
+    if (obj.material) {
+      obj.material.dispose();
+      obj.material = null;
+    }
+    if (obj.texture) {
+      obj.texture.dispose();
+      obj.texture = null;
+    }
+  }
+
+  // Добавляет 3d объект в на сцену
+  const createObject = (triangles, vertices, scene) => {
+    //Проверка на наличие данных
+    if (!triangles || !vertices) return
 
     //Создание геометрии
     const geometry = new THREE.Geometry();
@@ -78,7 +111,6 @@ const CreateModel = () => {
     //Создание материалов
     const material = new THREE.MeshBasicMaterial({
       color: 0xdaa520,
-      specular: 0xbcbfbc,
     });
     const linesMaterial = new THREE.MeshBasicMaterial({
       color: 0xc30d0d,
@@ -88,25 +120,27 @@ const CreateModel = () => {
     //Создание объектов, добавление на сцену
     const lines = new THREE.Mesh(geometry, linesMaterial)
     const cube = new THREE.Mesh(geometry, material);
+
     scene.add(cube)
     scene.add(lines)
-
-    //Добавление контроллера
-    const controls = new OrbitControls(camera, renderer.domElement);
-
-    //Start render
-    const animate = () => {
-      renderer.render(scene, camera);
-      requestAnimationFrame(animate);
-    };
-
-    animate()
   }
+
+  // Создаст сцену при первой загрузке компоненты
+  useEffect(() => {
+    setThree(createScene())
+  }, [])
+
+  // Перерисует модель при получении новых координат
+  useEffect(() => {
+    if (three.scene.children) clearScene(three.scene)
+    createObject(modelCoord.triangles, modelCoord.vertices, three.scene)
+  }, [modelCoord])
 
   return (
     <div className="createModel">
       <div className="createModel__body">
         <div className="modelView" ref={canvasContainer}>
+
         </div>
         <div className="createModel__inputs">
           <label htmlFor="width">Ширина
@@ -153,6 +187,8 @@ const CreateModel = () => {
         </div>
         {error && <div className='createModel__error'>{error}</div>}
       </div>
+
+
     </div>
   )
 }

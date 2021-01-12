@@ -1,6 +1,6 @@
 import React from 'react'
-import "./App.css"
 import CreateModel from "./components/CreateModel/CreateModel";
+import "./App.css"
 
 function App() {
   return (
